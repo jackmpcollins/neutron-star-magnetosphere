@@ -74,6 +74,9 @@ def drawMagLine(phi, theta_init_deg, rep):
     y_pos = sin(theta_init)*sin(phi)*y
     z_pos = cos(theta_init)*z
     position = R*(x_pos + y_pos + z_pos)
+
+    #start a curve
+    fieldCurve = curve(pos=[position], radius=25/theta_init_deg)
     
     for i in range(rep):
         #current values
@@ -154,8 +157,13 @@ def drawMagLine(phi, theta_init_deg, rep):
         #plot magnetic field
         B = 10*(B_d + B_1 + B_2)/mag(B_d + B_1 + B_2)
         #B = 10*B_s/mag(B_s)
-        arrow(pos=position, axis=B, color=color.white) #magnetosphere
-                
+        #arrow(pos=position, axis=B, color=color.white) #magnetosphere
+        
+        #here should make array of positions
+        #then have separate part of program to select positions to plot
+        
+        fieldCurve.append(position)
+
         #current position
         position = position + B
 
@@ -167,10 +175,10 @@ def drawMagLine(phi, theta_init_deg, rep):
         print("mag field strength:", mag(B))
         '''
 
-for j in range(1):
+for j in range(21):
     phi = pi*j/10
     #drawMagLine(phi, 25, 1000)
     drawMagLine(phi, 20, 42)
     #drawMagLine(phi, 15, 75)
     drawMagLine(phi, 10, 165)
-    #drawMagLine(phi, 5, 2000)
+    drawMagLine(phi, 5, 2000)
