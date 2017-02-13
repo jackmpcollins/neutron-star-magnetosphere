@@ -59,6 +59,7 @@ def drawBasics():
         arrow(pos=i*R*rotationAxis, axis=R*rotationAxis, color=color.blue)
 
     # light cylinder
+    global lightCylinderRadius
     lightCylinderRadius = c*P/(2*pi)
     print("lc radius:", lightCylinderRadius)
     lightCylinderHeight = 4*lightCylinderRadius
@@ -112,6 +113,9 @@ def drawMagLine(phi, theta_init_deg, rep):
         if position.x < 0:
                     phi += pi
         eta = (r/R)
+        if r*sin(theta) > lightCylinderRadius:
+        	print("hit light cylinder")
+        	break
         
         #calculate trig and common terms now so they aren't repeatedly done later
         #this also makes formulae more readable
@@ -184,7 +188,7 @@ def allPhi(phiRange):
         #drawMagLine(phi, 25, 1000)
         #drawMagLine(phi, 20, 42)
         #drawMagLine(phi, 15, 75)
-        #drawMagLine(phi, 10, 2000)
+        drawMagLine(phi, 10, 2000)
         drawMagLine(phi, 5, 2000)
         #drawMagLine(phi, 4, 3000)
 
@@ -243,8 +247,10 @@ def main():
     '''
     #above simplified down by hand
     k = 0.008*pi*(R**2)
+    k = 0.836
+    print("k:", k)
 
-    #phi_0 = ? #HOW TO CALCULATE THIS?
+    #phi_0 = ?
     phi_0 = 25*pi/180
     lambda_0 = (1-k)*cos(chi) + (3/2)*theta_0*xi*sin(chi)*cos(phi_0)
     print("lambda_0:", lambda_0)
