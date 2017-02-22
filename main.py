@@ -41,12 +41,13 @@ def specifyStarParameters():
 
 def main():
     ns = specifyStarParameters()
+    ns.setOtherk()
     startTime = time()
     #draw star, rotational axis, light cylinder
     ns.draw()
     #calculate points using values given
     #plot field
-    drawMagnetosphere(ns, 10)
+    drawMagnetosphere(ns, 4)
     #output instructions for manipulation
     print("To zoom in/out, hold down the scroll wheel and move the mouse forward/backward.")
     print("To move star, hold down the right mouse button to grab, and move the mouse.")
