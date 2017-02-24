@@ -4,11 +4,22 @@
 ## This file defines functions for plotting the magnetic field
 
 from visual import *
+import matplotlib.pyplot as plt
 
 #cartesian unit vectors
 x = vector(1,0,0)
 y = vector(0,1,0)
 z = vector(0,0,1)
+
+global emissions
+emissions = [[],[]]
+def calculateEmissionDirection(B, chi):
+    B = mag2rot(B, chi)
+    theta = acos(B.z/mag(B))
+    phi = atan2(B.y, B.x) + (B.y < 0)*2*pi
+    emissions[0].append(rad2deg(phi))
+    emissions[1].append(rad2deg(theta))
+    return 0
 
 #samples the calculated points to reduce amount to plot, and plots curve
 def plotFieldLine(points, initialAngle):
@@ -18,12 +29,21 @@ def plotFieldLine(points, initialAngle):
             usedPoints.append(points[i])
     curve(pos=points, radius=25/initialAngle)
     return 0
+
+#converts a point from 'magnetic coordinates' to coordinates with z along rotational axis
+def mag2rot(pos, chi):
+    m = matrix([[cos(chi),0,-sin(chi)], [0,1,0], [sin(chi),0,cos(chi)]])
+    new = dot(m,pos)
+    return vector(new.tolist()[0])
     
 #draws a single magnetic field line given it's starting point on the surface of the star
 def calculateFieldLine(star, phi, theta_init_deg, rep):
     #raw_input("Hit Enter")
     phi_0 = phi
-    reachedBoundary = False
+    alreadyEmitted = False
+    emissionRadius = 0.5*star.lc_radius
+    lambda_0 = (1-star.k)*cos(star.chi) + 1.5*star.theta_0*star.xi*sin(star.chi)*cos(phi_0)
+    #print("lambda_0:", lambda_0)
     
     #initial position
     theta_init = pi*theta_init_deg/180
@@ -47,12 +67,10 @@ def calculateFieldLine(star, phi, theta_init_deg, rep):
         eta = (r/star.radius)
         
         (x_pos, y_pos, z_pos) = position
-        dist = sqrt( y_pos**2 + (x_pos*cos(theta) - z_pos*sin(theta))**2)
-        print("dist:", dist)
-        print("light cylider radius:", star.lc_radius)
+        dist = sqrt( y_pos**2 + (r*cos(atan(position.z/position.x) + star.chi))**2)
+        
         if dist > star.lc_radius:
-            print("hit light cylinder")
-            reachedBoundary = True
+            print("Hit the light cylinder")
             break
         
         #calculate trig and common terms now so they aren't repeatedly done later
@@ -74,14 +92,13 @@ def calculateFieldLine(star, phi, theta_init_deg, rep):
         eta_lc = star.eta_lc
         k = star.k
         B_0 = star.B_0
-        lambda_0 = star.lambda_0
         theta_0 = star.theta_0
         xi = star.xi
 
         if star.chi == 0:
             #simplified case for aligned rotator
             B_r_s = cos_theta*( 1 + ((eta/eta_lc)**2)*( sin_theta2 - 2*k*(1-k) ) )
-            B_theta_s = (0.5)*sin_theta*( 1 - (0.5)*((eta/eta_lc)**2)*( sin_theta2 - 4*k*(1-k) ) )
+            B_theta_s = 0.5*sin_theta*( 1 - 0.5*((eta/eta_lc)**2)*( sin_theta2 - 4*k*(1-k) ) )
             B_phi_s = -(1-k)*(eta/eta_lc)*sin_theta
             B_s = (B_0/eta**3)*(B_r_s*e_r + B_theta_s*e_theta + B_phi_s*e_phi)
             B = 10*B_s/mag(B_s)
@@ -97,9 +114,9 @@ def calculateFieldLine(star, phi, theta_init_deg, rep):
             B_1 = (eta/eta_lc)*(B_0/eta**3)*(B_r_1*e_r + B_theta_1*e_theta + B_phi_1*e_phi)
             
             #second correction due to rotation
-            B_r_2 = cos_theta*( cos_chi*( cos_chi*sin_theta2 + 2*lambda_0*(1-k) ) + (sin_chi**2)*(1 - 0.5*sin_theta2) - 2*( cos_chi*sin_theta*cos_theta + (1.5)*lambda_0*theta_0*xi*(theta/(sin_theta*cos_theta) - 1) )*sin_chi*cos_phi - 0.5*(sin_chi**2)*(sin_theta2)*cos(2*phi) )
-            B_theta_2 = -sin_theta*( ( 0.25*cos_chi*sin_theta2 + lambda_0*(1-k) )*cos_chi + 0.5*(sin_chi**2)*(1 - 0.25*sin_theta2) + ( ( (0.25/tan_theta)*cos(2*theta) + (1 - cos_theta)/(sin_theta**3) )*cos_chi - (1.5)*lambda_0*theta_0*xi*(3*(1 - theta/tan_theta)/sin_theta2 - 1) )*sin_chi*cos_phi - (5/8)*( (1/sin_theta2)*( (1-cos_theta)/sin_theta2 - 0.5 ) + 0.2*sin_theta2 )*sin_theta2*cos(2*theta) )
-            B_phi_2 = ( ( (0.25 + (1-cos_theta)/sin_theta2 )*cos_chi + (1.5)*lambda_0*theta_0*xi*((3*sin_theta*cos_theta - theta*(3-2*sin_theta2))/sin_theta2) )*sin_chi*sin_phi - (5.0/8)*( (1-cos_theta)/(sin_theta**3) - (2*sin_theta)**(-1) )*sin_theta2*sin(2*phi) )
+            B_r_2 = cos_theta*( cos_chi*( cos_chi*sin_theta2 + 2*lambda_0*(1-k) ) + (sin_chi**2)*(1 - 0.5*sin_theta2) - 2*( cos_chi*sin_theta*cos_theta + 1.5*lambda_0*theta_0*xi*(theta/(sin_theta*cos_theta) - 1) )*sin_chi*cos_phi - 0.5*(sin_chi**2)*sin_theta2*cos(2*phi) )
+            B_theta_2 = -sin_theta*( ( 0.25*cos_chi*sin_theta2 + lambda_0*(1-k) )*cos_chi + 0.5*(sin_chi**2)*(1 - 0.25*sin_theta2) + ( ( (0.25/tan_theta)*cos(2*theta) + (1 - cos_theta)/(sin_theta**3) )*cos_chi - 1.5*lambda_0*theta_0*xi*(3*(1 - theta/tan_theta)/sin_theta2 - 1) )*sin_chi*cos_phi - (5.0/8)*( (1/sin_theta2)*( (1-cos_theta)/sin_theta2 - 0.5 ) + 0.2*sin_theta2 )*(sin_chi**2)*cos(2*phi) )
+            B_phi_2 = ( ( (0.25 + (1-cos_theta)/sin_theta2 )*cos_chi + 1.5*lambda_0*theta_0*xi*( (3*sin_theta*cos_theta - theta*(3-2*sin_theta2))/sin_theta2 ) )*sin_chi*sin_phi - (5.0/8)*( (1-cos_theta)/(sin_theta**3) - (1/(2*sin_theta)) )*(sin_chi**2)*sin(2*phi) )
             B_2 = ((eta/eta_lc)**2)*(B_0/eta**3)*(B_r_2*e_r + B_theta_2*e_theta + B_phi_2*e_phi)
             
             #Effect of ExB drift
@@ -110,13 +127,15 @@ def calculateFieldLine(star, phi, theta_init_deg, rep):
             
             #calculate total magnetic field
             B = 10*(B_d + B_1 + B_2 + B_3)/mag(B_d + B_1 + B_2 + B_3)
+            #B = 10*(B_d + B_1)/mag(B_d + B_1)
 
-        if reachedBoundary:
-            print("Hit the light cylinder!")
-            print("Direction:", B)
-            print("Last known position", position)
-            print("")
-            break
+        if r > emissionRadius and not alreadyEmitted:
+            print("Emission!")
+            #print("Direction:", B)
+            #print("Last known position", position)
+            #print("")
+            calculateEmissionDirection(B, star.chi)
+            alreadyEmitted = True
         
         points.append(position)
 
@@ -125,10 +144,18 @@ def calculateFieldLine(star, phi, theta_init_deg, rep):
 
     return points
 
-
+#cycles through initial positions and plots field line
 def drawMagnetosphere(ns, theta_initial):
     for i in range(13):
         phi = i*pi/6
-        fieldLine = calculateFieldLine(ns, phi, theta_initial, 400)
+        fieldLine = calculateFieldLine(ns, phi, theta_initial, 6000)
         plotFieldLine(fieldLine, theta_initial)
+    return 0
+
+#plots graph of emissions
+def plotEmissions():
+    plt.plot(emissions[0],emissions[1], 'o')
+    plt.xlabel("phi (degrees)")
+    plt.ylabel("theta (degrees)")
+    plt.show()
     return 0

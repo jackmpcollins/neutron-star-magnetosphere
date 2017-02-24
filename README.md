@@ -11,10 +11,12 @@ python main.py
 
 ### Prerequisites
 
-Python2. You will also need to install the visual python package.
+Python2. You will also need to install the visual python, tkinter and matplotlib packages.
 On linux:
 ```
 sudo apt-get install python-visual
+sudo apt-get install python-tk
+sudo apt-get install python-matplotlib
 ```
 
 ## Authors

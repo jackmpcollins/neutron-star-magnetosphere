@@ -5,7 +5,7 @@ from visual import *
 from time import time
 
 from classStar import Star
-from functionsMagneticField import drawMagnetosphere
+from functionsMagneticField import drawMagnetosphere, plotEmissions
 
 
 def specifyStarParameters():
@@ -36,22 +36,23 @@ def specifyStarParameters():
     else:
         (R, P, chi) = [float(item) for item in starInfo[starName]]
     star = Star(R, P, chi)
-    print("here!")
     return star
 
 def main():
     ns = specifyStarParameters()
-    ns.setOtherk()
+    #ns.setOtherk()
     startTime = time()
     #draw star, rotational axis, light cylinder
     ns.draw()
     #calculate points using values given
     #plot field
-    drawMagnetosphere(ns, 4)
+    phiAngle = float(raw_input("phi angle: "))
+    drawMagnetosphere(ns, phiAngle)
     #output instructions for manipulation
     print("To zoom in/out, hold down the scroll wheel and move the mouse forward/backward.")
     print("To move star, hold down the right mouse button to grab, and move the mouse.")
     #ask user if want to do a different pulsar
+    plotEmissions()
     print("Time elapsed:", time() - startTime)
     return 0
 

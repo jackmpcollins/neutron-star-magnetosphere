@@ -26,8 +26,6 @@ class Star(object):
         self.theta_0 = (self.omega*self.radius/c)**0.5 #canonical polar cap half-angle
 
         self.k = 0.836 #parameter measuring general-relativistic effect of frame dragging at the stellar surface in units of stellar angular velocity
-        self.phi_0 = 25*pi/180
-        self.lambda_0 = (1-self.k)*cos(self.chi) + (3/2)*self.theta_0*self.xi*sin(self.chi)*cos(self.phi_0)
 
     def draw(self):
         #create scene and set as main
@@ -61,4 +59,5 @@ class Star(object):
         '''
         print("old k =", self.k)
         self.k = (1.0/125)*pi*self.radius**2 #above simplified down CHECK!
+        self.lambda_0 = (1-self.k)*cos(self.chi) + (1.5)*self.theta_0*self.xi*sin(self.chi)*cos(self.phi_0)
         print("new k =", self.k)
