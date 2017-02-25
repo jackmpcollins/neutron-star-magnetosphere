@@ -1,13 +1,17 @@
 ## Jack Collins, Final Year Project, National University of Ireland Galway, 2017
 ## written for Python2.7
 
+## This file defines calculates the emission an observer at various angles to the
+## rotation axis would see
+
+from classStar import *
+from classFieldline import *
+import matplotlib.pyplot as plt
 from visual import *
 from time import time
+import numpy as np
 
-from classStar import Star
-from functionsMagneticField import drawMagnetosphere, plotEmissions
-
-
+#asks user which star to model
 def specifyStarParameters():
     #load list of already saved pulsars
     starInfo = {}
@@ -38,21 +42,38 @@ def specifyStarParameters():
     star = Star(R, P, chi)
     return star
 
+#plots graph of emissions
+def plotEmissions(emissions):
+    plt.pcolor(np.asarray(emissions))
+    plt.xlabel("phi (degrees)")
+    plt.ylabel("theta (degrees)")
+    plt.show()
+    return 0
+
+
 def main():
     ns = specifyStarParameters()
     #ns.setOtherk()
     startTime = time()
-    #draw star, rotational axis, light cylinder
-    ns.draw()
-    #calculate points using values given
-    #plot field
-    phiAngle = float(raw_input("phi angle: "))
-    drawMagnetosphere(ns, phiAngle)
+
+    #draw star, rotational axis, light cylinder, magnetosphere
+    #ns.draw(5, 10, 15)
+    
+    #need to determine polar cap so know what values to use
+    theta_max = 5
+    emissions = [[0]*360 for i in range(180)]
+    for phi in range(0,360,1):
+        print("phi: ", phi)
+        for theta in np.arange(1,theta_max, 0.1):
+            (phi_emis, theta_emis) = Fieldline(ns, phi, theta).emissionDirection
+            emissions[int(round(theta_emis))][int(round(phi_emis))] += 1
+
+    plotEmissions(emissions)
+    #plotEmissions()
     #output instructions for manipulation
     print("To zoom in/out, hold down the scroll wheel and move the mouse forward/backward.")
     print("To move star, hold down the right mouse button to grab, and move the mouse.")
     #ask user if want to do a different pulsar
-    plotEmissions()
     print("Time elapsed:", time() - startTime)
     return 0
 

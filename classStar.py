@@ -4,10 +4,10 @@
 ## This file defines the class 'Star'
 
 from visual import *
-from math import pi
+from classFieldline import *
 
 global c
-c = 3*(10**5)
+c = 3*(10**5) #km/s
 
 class Star(object):
     def __init__(self, radius, period, chi):
@@ -26,8 +26,8 @@ class Star(object):
         self.theta_0 = (self.omega*self.radius/c)**0.5 #canonical polar cap half-angle
 
         self.k = 0.836 #parameter measuring general-relativistic effect of frame dragging at the stellar surface in units of stellar angular velocity
-
-    def draw(self):
+        
+    def draw(self, *initialAngles):
         #create scene and set as main
         scene = display(title="Neutron Star Magnetosphere") #, stereo="redcyan", stereodepth=0)
         scene.select()
@@ -47,6 +47,11 @@ class Star(object):
         arrow(pos=rotAxPerp, axis=rotAxPerp, color=color.yellow)
         #draw light cylinder
         cylinder(pos=-self.lc_height/2*rotationAxis, axis=self.lc_height*rotationAxis, radius=self.lc_radius, opacity=0.15, color=color.yellow)
+
+        #draw magnetosphere
+        for theta in initialAngles:
+            for phi in range(0,360,30):
+                Fieldline(self, phi, theta).draw()
 
     def setOtherk(self):
         # k (estimate), the parameter measuring the general-relativistic effect of frame dragging at the stellar surface in units of stellar angular velocity
