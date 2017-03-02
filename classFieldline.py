@@ -18,7 +18,7 @@ def calculateEmissionDirection(B, chi):
     return (rad2deg(phi), rad2deg(theta))
 
 class Fieldline(object):
-    def __init__(self, star, phi_deg, theta_deg, rep=6000):
+    def __init__(self, star, phi_deg, theta_deg, stopAtEmission=False, rep=6000):
         eta_lc = star.eta_lc
         k = star.k
         B_0 = star.B_0
@@ -109,6 +109,8 @@ class Fieldline(object):
                 #print("Emission!")
                 self.emissionDirection = calculateEmissionDirection(B, star.chi)
                 alreadyEmitted = True
+                if stopAtEmission:
+                    break
             
             self.points.append(position)
 

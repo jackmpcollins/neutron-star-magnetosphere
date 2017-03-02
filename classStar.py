@@ -29,8 +29,8 @@ class Star(object):
         
     def draw(self, *initialAngles):
         #create scene and set as main
-        scene = display(title="Neutron Star Magnetosphere") #, stereo="redcyan", stereodepth=0)
-        scene.select()
+        self.scene = display(title="Neutron Star Magnetosphere") #, stereo="redcyan", stereodepth=0)
+        self.scene.select()
 
         #draw star and axes
         sphere(pos=vector(0,0,0), radius=self.radius, color=color.white)
@@ -40,13 +40,13 @@ class Star(object):
         #draw rotation axis
         schi = sin(self.chi)
         cchi = cos(self.chi) #Muslimov and Harding (2005) says phi measured counterclockwise from meridian passing through rotation axis
-        rotationAxis = vector(schi,0,cchi)
+        self.rotationAxis = vector(schi,0,cchi)
         for i in range(-20, 21):
-            arrow(pos=i*self.radius*rotationAxis, axis=self.radius*rotationAxis, color=color.blue)
-        rotAxPerp = self.radius*vector(cchi,0,-schi)
-        arrow(pos=rotAxPerp, axis=rotAxPerp, color=color.yellow)
+            arrow(pos=i*self.radius*self.rotationAxis, axis=self.radius*self.rotationAxis, color=color.blue)
+        self.rotAxPerp = self.radius*vector(cchi,0,-schi)
+        arrow(pos=self.rotAxPerp, axis=self.rotAxPerp, color=color.yellow)
         #draw light cylinder
-        cylinder(pos=-self.lc_height/2*rotationAxis, axis=self.lc_height*rotationAxis, radius=self.lc_radius, opacity=0.15, color=color.yellow)
+        cylinder(pos=-self.lc_height/2*self.rotationAxis, axis=self.lc_height*self.rotationAxis, radius=self.lc_radius, opacity=0.15, color=color.yellow)
 
         #draw magnetosphere
         for theta in initialAngles:
@@ -64,5 +64,13 @@ class Star(object):
         '''
         print("old k =", self.k)
         self.k = (1.0/125)*pi*self.radius**2 #above simplified down CHECK!
-        self.lambda_0 = (1-self.k)*cos(self.chi) + (1.5)*self.theta_0*self.xi*sin(self.chi)*cos(self.phi_0)
         print("new k =", self.k)
+
+    def animate(self):
+        self.scene.userspin = False
+        self.scene.forward = self.rotAxPerp
+        self.scene.up = self.rotationAxis
+        while True:
+            rate(30)
+            currentCamera = vector(self.scene.forward)
+            self.scene.forward = currentCamera.rotate(pi/90, self.rotationAxis)

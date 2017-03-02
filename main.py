@@ -55,26 +55,47 @@ def main():
     ns = specifyStarParameters()
     #ns.setOtherk()
     startTime = time()
-
-    #draw star, rotational axis, light cylinder, magnetosphere
-    #ns.draw(5, 10, 15)
     
     #need to determine polar cap so know what values to use
-    theta_max = 5
+
+    theta_max = 2
     emissions = [[0]*360 for i in range(180)]
-    for phi in range(0,360,1):
+    for phi in np.arange(0,360,1):
         print("phi: ", phi)
         for theta in np.arange(1,theta_max, 0.1):
-            (phi_emis, theta_emis) = Fieldline(ns, phi, theta).emissionDirection
-            emissions[int(round(theta_emis))][int(round(phi_emis))] += 1
+            (phi_emis, theta_emis) = Fieldline(ns, phi, theta, True).emissionDirection
+            emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1
 
     plotEmissions(emissions)
-    #plotEmissions()
+
+    print("Time elapsed:", time() - startTime)
+
+    try:
+        while True:
+            obsAng = int(raw_input("Enter the observers angle: "))
+            plt.plot(emissions[obsAng])
+            plt.xlabel("phi (degrees)")
+            plt.ylabel("relative emission")
+            plt.show()
+
+    return 0
+
+
+def main2():
+    ns = specifyStarParameters()
+    #ns.setOtherk()
+    startTime = time()
+
+    #draw star, rotational axis, light cylinder, magnetosphere
+    ns.draw(5, 10, 15)
+    ns.animate()
+    
     #output instructions for manipulation
     print("To zoom in/out, hold down the scroll wheel and move the mouse forward/backward.")
     print("To move star, hold down the right mouse button to grab, and move the mouse.")
-    #ask user if want to do a different pulsar
+
     print("Time elapsed:", time() - startTime)
     return 0
+
 
 main()
