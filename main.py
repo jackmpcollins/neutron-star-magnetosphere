@@ -58,7 +58,7 @@ def main():
     
     #need to determine polar cap so know what values to use
 
-    theta_max = 2
+    theta_max = 1.1
     emissions = [[0]*360 for i in range(180)]
     for phi in np.arange(0,360,1):
         print("phi: ", phi)
@@ -70,13 +70,13 @@ def main():
 
     print("Time elapsed:", time() - startTime)
 
-    try:
-        while True:
-            obsAng = int(raw_input("Enter the observers angle: "))
-            plt.plot(emissions[obsAng])
-            plt.xlabel("phi (degrees)")
-            plt.ylabel("relative emission")
-            plt.show()
+    obsAng = int(raw_input("Enter the observers angle (or 0 to quit): "))
+    while obsAng > 0:
+        plt.plot(emissions[obsAng])
+        plt.xlabel("phi (degrees)")
+        plt.ylabel("relative emission")
+        plt.show()
+        obsAng = int(raw_input("Enter the observers angle (or 0 to quit): "))
 
     return 0
 
