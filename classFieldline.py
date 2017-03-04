@@ -27,15 +27,16 @@ class Fieldline(object):
 
         phi = phi_deg*pi/180
         phi_0 = phi
-        alreadyEmitted = False
+        self.alreadyEmitted = False
         emissionRadius = 0.5*star.lc_radius
         lambda_0 = (1-star.k)*cos(star.chi) + 1.5*star.theta_0*star.xi*sin(star.chi)*cos(phi_0)
         
         #initial position
         theta = pi*theta_deg/180
         position = star.radius*vector(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta))
-
         self.initialPosition = position
+
+        self.isOpen = True #assume fieldline is open
 
         #start list of points
         self.points = []
@@ -44,7 +45,7 @@ class Fieldline(object):
             r = mag(position)
             if r + 0.5 < star.radius:
                 print("back at star")
-                self.isClosed = False
+                self.isOpen = False
                 break
 
             theta = acos(position.z/r)
@@ -105,10 +106,10 @@ class Fieldline(object):
                 #calculate total magnetic field
                 B = 10*(B_d + B_1 + B_2 + B_3)/mag(B_d + B_1 + B_2 + B_3)
 
-            if r > emissionRadius and not alreadyEmitted:
+            if r > emissionRadius and not self.alreadyEmitted:
                 #print("Emission!")
                 self.emissionDirection = calculateEmissionDirection(B, star.chi)
-                alreadyEmitted = True
+                self.alreadyEmitted = True
                 if stopAtEmission:
                     break
             

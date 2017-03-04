@@ -55,16 +55,21 @@ def main():
     ns = specifyStarParameters()
     #ns.setOtherk()
     startTime = time()
-    
-    #need to determine polar cap so know what values to use
 
-    theta_max = 1.1
+    theta_max = 1.1 #remove
     emissions = [[0]*360 for i in range(180)]
     for phi in np.arange(0,360,1):
         print("phi: ", phi)
-        for theta in np.arange(1,theta_max, 0.1):
-            (phi_emis, theta_emis) = Fieldline(ns, phi, theta, True).emissionDirection
-            emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1
+        theta = 2.0
+        line = Fieldline(ns, phi, theta, False)
+        #for theta in np.arange(1,theta_max, 0.1):
+        while line.isOpen:
+            if line.alreadyEmitted:
+                (phi_emis, theta_emis) = line.emissionDirection
+                emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1
+            theta += 0.5
+            line = Fieldline(ns, phi, theta, False)
+        print("theta PC (degrees): ", theta)
 
     plotEmissions(emissions)
 
