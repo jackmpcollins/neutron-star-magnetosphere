@@ -50,6 +50,28 @@ def plotEmissions(emissions):
     plt.show()
     return 0
 
+#allows for different blurring/scattering
+#Does this just do the same as blurring the image after making it the usual way?
+def addWithBlur(direc, data):
+    (phi_emis, theta_emis) = direc
+    blurring = [[1,2,1],[2,4,2],[1,2,1]] #Approximate Gaussian blur
+    row = int(round(theta_emis))
+    print("row: ", row)
+    col = int(round(phi_emis) % 360)
+    print("col: ", col)
+    for i in range(3):
+        for j in range(3):
+            print("i,j: ", i , j)
+            print("blurring i j: ", blurring[i][j])
+            data[row-1+i][col-1+j] = blurring[i][j]
+    return(data)
+
+def testBlur():
+    a = [[0]*10 for i in range(5)]
+    direc = (4,3)
+    print(a)
+    print(addWithBlur(direc, a))
+    return 0
 
 def main():
     ns = specifyStarParameters()
