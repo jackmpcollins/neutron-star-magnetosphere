@@ -7,7 +7,7 @@ from visual import *
 from classFieldline import *
 
 global c
-c = 3*(10**5) #km/s
+c = 3.0*(10**5) #km/s
 
 class Star(object):
     def __init__(self, radius, period, chi):

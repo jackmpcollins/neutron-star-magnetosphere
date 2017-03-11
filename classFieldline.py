@@ -11,6 +11,7 @@ def mag2rot(pos, chi):
     new = dot(m,pos)
     return vector(new.tolist()[0])
 
+#changes emission from magnetic coords to rotational coords
 def calculateEmissionDirection(B, chi):
     B = mag2rot(B, chi)
     theta = acos(B.z/mag(B))
@@ -36,16 +37,18 @@ class Fieldline(object):
         position = star.radius*vector(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta))
         self.initialPosition = position
 
-        self.isOpen = True #assume fieldline is open
+        self.isOpen = False #assume fieldline is open
 
         #start list of points
         self.points = []
         
+        cleanExit = False #this gets set to true if for loop exits because of hitting light cylinder or returning to star. False indicates 6000 repetitions
         for i in range(rep):
             r = mag(position)
-            if r + 0.5 < star.radius:
-                print("back at star")
-                self.isOpen = False
+            if theta > 0.95*pi:
+            #if r + 0.5 < star.radius: #change condition to this if visualising
+                cleanExit = True
+                print("Back at star")
                 break
 
             theta = acos(position.z/r)
@@ -54,7 +57,9 @@ class Fieldline(object):
             
             dist = sqrt( position.y**2 + (r*cos(atan(position.z/position.x) + star.chi))**2)
             if dist > star.lc_radius:
-                #print("Hit the light cylinder")
+                cleanExit = True
+                print("Hit the light cylinder")
+                self.isOpen = True
                 break
             
             #calculate trig and common terms now so they aren't repeatedly done later
@@ -111,12 +116,15 @@ class Fieldline(object):
                 self.emissionDirection = calculateEmissionDirection(B, star.chi)
                 self.alreadyEmitted = True
                 if stopAtEmission:
+                    cleanExit = True
                     break
             
             self.points.append(position)
 
             #current position
             position = position + B
+        if not cleanExit:
+            print("Hit "+str(rep)+" rep limit")
 
     #draw the fieldline
     def draw(self):
