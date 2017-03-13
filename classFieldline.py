@@ -19,7 +19,7 @@ def calculateEmissionDirection(B, chi):
     return (rad2deg(phi), rad2deg(theta))
 
 class Fieldline(object):
-    def __init__(self, star, phi_deg, theta_deg, stopAtEmission=False, rep=6000):
+    def __init__(self, star, phi_deg, theta_deg, stopAtEmission=False, fromSouthPole=False, rep=6000):
         eta_lc = star.eta_lc
         k = star.k
         B_0 = star.B_0
@@ -37,7 +37,19 @@ class Fieldline(object):
         position = star.radius*vector(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta))
         self.initialPosition = position
 
-        self.isOpen = False #assume fieldline is open
+        self.isOpen = False #assume fieldline is closed until proven open
+
+        #if following field lines backwards from south pole, need to change how to check if returned to star, and how position changes due to field
+        if fromSouthPole:
+            def backAtStar(theta):
+                return (theta < 0.05*pi)
+            def movePos(position, B):
+                return (position - B)
+        else:
+            def backAtStar(theta):
+                return (theta > 0.95*pi)
+            def movePos(position, B):
+                return (position + B)
 
         #start list of points
         self.points = []
@@ -45,8 +57,8 @@ class Fieldline(object):
         cleanExit = False #this gets set to true if for loop exits because of hitting light cylinder or returning to star. False indicates 6000 repetitions
         for i in range(rep):
             r = mag(position)
-            if theta > 0.95*pi:
-            #if r + 0.5 < star.radius: #change condition to this if visualising
+            if backAtStar(theta):
+            #if r + 0.5 < star.radius: #better condition to use if visualising
                 cleanExit = True
                 print("Back at star")
                 break
@@ -122,7 +134,8 @@ class Fieldline(object):
             self.points.append(position)
 
             #current position
-            position = position + B
+            position = movePos(position, B)
+
         if not cleanExit:
             print("Hit "+str(rep)+" rep limit")
 
