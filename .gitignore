@@ -3,3 +3,5 @@ test.py
 functionMagneticField.py
 todo.txt
 savedEmissions/*.txt
+*.txt
+!savedStars.txt

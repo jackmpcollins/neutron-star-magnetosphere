@@ -19,7 +19,7 @@ def calculateEmissionDirection(B, chi):
     return (rad2deg(phi), rad2deg(theta))
 
 class Fieldline(object):
-    def __init__(self, star, phi_deg, theta_deg, stopAtEmission=False, fromSouthPole=False, rep=6000):
+    def __init__(self, star, phi_deg, theta_deg, stopAtEmission=False, emissionRadPercentLC=[0.5], fromSouthPole=False, rep=6000):
         eta_lc = star.eta_lc
         k = star.k
         B_0 = star.B_0
@@ -28,16 +28,19 @@ class Fieldline(object):
 
         phi = phi_deg*pi/180
         phi_0 = phi
-        self.alreadyEmitted = False
-        emissionRadius = 0.5*star.lc_radius
+        #print("emissionRadPercentLC: ", emissionRadPercentLC)
+        emissionRadii = [item*star.lc_radius for item in emissionRadPercentLC+[100]] #+[100] gives a ridiculous outermost emission distance which will never be reached
+        #print("emissionRadii: ", emissionRadii)
         lambda_0 = (1-star.k)*cos(star.chi) + 1.5*star.theta_0*star.xi*sin(star.chi)*cos(phi_0)
-        
+        #x = raw_input("continue?")
         #initial position
         theta = pi*theta_deg/180
         position = star.radius*vector(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta))
         self.initialPosition = position
 
         self.isOpen = False #assume fieldline is closed until proven open
+
+        self.emissionDirections = [] #star list of emissions
 
         #if following field lines backwards from south pole, need to change how to check if returned to star, and how position changes due to field
         if fromSouthPole:
@@ -68,9 +71,10 @@ class Fieldline(object):
             eta = (r/star.radius)
             
             dist = sqrt( position.y**2 + (r*cos(atan(position.z/position.x) + star.chi))**2)
+            #print("dist: ", dist)
             if dist > star.lc_radius:
                 cleanExit = True
-                print("Hit the light cylinder")
+                #print("Hit the light cylinder")
                 self.isOpen = True
                 break
             
@@ -122,11 +126,13 @@ class Fieldline(object):
                 
                 #calculate total magnetic field
                 B = 10*(B_d + B_1 + B_2 + B_3)/mag(B_d + B_1 + B_2 + B_3)
+            #print("emissioRadii[0]: ", emissionRadii[0])
 
-            if r > emissionRadius and not self.alreadyEmitted:
+            #check if at an emission distance, and if there then remove that distance from check
+            if r > emissionRadii[0]:
                 #print("Emission!")
-                self.emissionDirection = calculateEmissionDirection(B, star.chi)
-                self.alreadyEmitted = True
+                self.emissionDirections.append(calculateEmissionDirection(B, star.chi))
+                del emissionRadii[0]
                 if stopAtEmission:
                     cleanExit = True
                     break
