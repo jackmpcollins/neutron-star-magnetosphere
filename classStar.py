@@ -13,7 +13,7 @@ class Star(object):
     def __init__(self, radius, period, chi):
         self.radius = radius #radius of star in km
         self.period = period #period of rotation in seconds
-        self.chi = chi*pi/180 #inclination of magnetic axis to rotational in radians
+        self.chi = deg2rad(chi) #inclination of magnetic axis to rotational in radians
 
         self.B_0 = 1 #magnetic field strength at magnetic pole
         self.xi = 0.9 #the dimensionless magnetic colatitude of open field lines, xi=1 corresponds to the last open field lines, xi=0 corresponds to the magnetic axis
@@ -41,12 +41,14 @@ class Star(object):
         schi = sin(self.chi)
         cchi = cos(self.chi) #Muslimov and Harding (2005) says phi measured counterclockwise from meridian passing through rotation axis
         self.rotationAxis = vector(schi,0,cchi)
-        for i in range(-20, 21):
-            arrow(pos=i*self.radius*self.rotationAxis, axis=self.radius*self.rotationAxis, color=color.blue)
+        cylinder(pos=vector(0,0,0), axis=0.5*self.lc_height*self.rotationAxis, radius=self.radius/2, color=color.yellow)
+        cylinder(pos=vector(0,0,0), axis=-0.5*self.lc_height*self.rotationAxis, radius=self.radius/2, color=color.yellow)
+        
         self.rotAxPerp = self.radius*vector(cchi,0,-schi)
         arrow(pos=self.rotAxPerp, axis=self.rotAxPerp, color=color.yellow)
+
         #draw light cylinder
-        cylinder(pos=-self.lc_height/2*self.rotationAxis, axis=self.lc_height*self.rotationAxis, radius=self.lc_radius, opacity=0.15, color=color.yellow)
+        #cylinder(pos=-self.lc_height/2*self.rotationAxis, axis=self.lc_height*self.rotationAxis, radius=self.lc_radius, opacity=0.15, color=color.yellow)
 
         #draw magnetosphere
         for theta in initialAngles:
@@ -71,6 +73,7 @@ class Star(object):
         self.scene.forward = self.rotAxPerp
         self.scene.up = self.rotationAxis
         while True:
-            rate(30)
+            rate(1) #was 30
+            raw_input("next!")
             currentCamera = vector(self.scene.forward)
-            self.scene.forward = currentCamera.rotate(pi/90, self.rotationAxis)
+            self.scene.forward = currentCamera.rotate(-pi/20, self.rotationAxis) #was 90

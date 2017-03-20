@@ -26,15 +26,15 @@ class Fieldline(object):
         theta_0 = star.theta_0
         xi = star.xi
 
-        phi = phi_deg*pi/180
+        phi = deg2rad(phi_deg)
         phi_0 = phi
-        #print("emissionRadPercentLC: ", emissionRadPercentLC)
+
         emissionRadii = [item*star.lc_radius for item in emissionRadPercentLC+[100]] #+[100] gives a ridiculous outermost emission distance which will never be reached
-        #print("emissionRadii: ", emissionRadii)
+
         lambda_0 = (1-star.k)*cos(star.chi) + 1.5*star.theta_0*star.xi*sin(star.chi)*cos(phi_0)
-        #x = raw_input("continue?")
+
         #initial position
-        theta = pi*theta_deg/180
+        theta = deg2rad(theta_deg)
         position = star.radius*vector(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta))
         self.initialPosition = position
 
@@ -70,7 +70,7 @@ class Fieldline(object):
             phi = atan2(position.y, position.x) + (position.y < 0)*2*pi #gives positive angle in radians
             eta = (r/star.radius)
             
-            dist = sqrt( position.y**2 + (r*cos(atan(position.z/position.x) + star.chi))**2)
+            dist = sqrt( position.y**2 + (r*cos(atan(position.z/position.x) + star.chi))**2) #measuring distance along plane perpendicular to rotational axis
             #print("dist: ", dist)
             if dist > star.lc_radius:
                 cleanExit = True
