@@ -43,14 +43,24 @@ def specifyStarParameters():
     star = Star(R, P, chi)
     return star
 
+
 #plots graph of emissions
-def plotEmissions(emissions):
+def plotEmissions(emissions, chi=-1, rad=-1):
     em = gaussian_filter(np.asarray(emissions), sigma=3)
-    plt.pcolor(em)
-    plt.xlabel("phi (degrees)")
-    plt.ylabel("theta (degrees)")
+    plt.figure(figsize=(10,5))
+    plt.pcolor(em, vmin=0, vmax=1.8)
+    plt.axis([360,0,180,0])
+    #show color scale
+    plt.xlabel(r'Phase $\phi$ (degrees)', {'size':'15'})
+    plt.ylabel("Observer Viewing Angle (degrees)", {'size':'15'})
+    if chi >= 0:
+        plt.text(360, 175, r'$\chi=$' + str(chi)+r'$^{\circ}$', size=20, color='white')
+    if rad >= 0:
+        plt.text(360, 175, str(rad)+r'$R_{LC}$', size=20, color='white')
+    plt.colorbar()
     plt.show()
     return 0
+
 
 #saves matrix of emissions WITHOUT BLUR to file
 def saveEmissions(emissions):
@@ -66,27 +76,57 @@ def saveEmissions(emissions):
     return 0
 
 
-#allows for different blurring/scattering
-#Does this just do the same as blurring the image after making it the usual way?
-#this is redundant - Used gaussian_filter from scipy instead
-def addWithBlur(direc, data):
-    (phi_emis, theta_emis) = direc
-    blurring = [[1,2,1],[2,4,2],[1,2,1]] #Approximate Gaussian blur
-    row = int(round(theta_emis))
-    print("row: ", row)
-    col = int(round(phi_emis) % 360)
-    print("col: ", col)
-    for i in range(3):
-        for j in range(3):
-            print("i,j: ", i , j)
-            print("blurring i j: ", blurring[i][j])
-            data[row-1+i][col-1+j] = blurring[i][j]
-    return(data)
+#saves polar cap angles
+def savePC(angles, filename):
+    f = open("savedPolarCapPoints/"+filename+".txt", 'w')
+    f.write(str(angles)[1:-1])
+    f.close()
+
+def readPC(filename):
+    f = open("savedPolarCapPoints/"+filename+".txt", "r")
+    points = f.read()[1:-1].split("), (")
+    f.close()
+
+    thetas = []
+    for point in points:
+        thetas.append(float(point.split(", ")[1]))
+    return(thetas)
+
+
+#plots the shape of the polar cap for a given magnetic inclination angle
+def plotPCPoints(angle):
+    file = "fifthBandAngle" + str(angle) + "PolarCapPoints"
+    thetas = readPC(file)
+
+    #create x-y points to plot birds eye view
+    x = []
+    y = []
+    for i in range(360):
+        phi = deg2rad(i - 90) # rotate plot by 90 so phi = 0 is in negative y direction - easier to see change
+        x.append(thetas[i]*cos(phi))
+        y.append(thetas[i]*sin(phi))
+
+    plt.figure(figsize=(16,16))
+    plt.scatter(x,y)
+    plt.scatter(0,0, marker='x', color='black', s=1000)
+    plt.arrow(0, 0, 0, -3, head_width=0.5, head_length=1, fc='k', ec='k')
+    plt.text(1, 0.5, "velocity", size=40)
+
+    plt.arrow(0, 0, 3, 0, head_width=0.5, head_length=1, fc='k', ec='k')
+    plt.text(0, -2.5, r'$\phi = 0^{\circ}$', size=40)
+
+    plt.text(-10, 10, r'$\chi = $'+str(angle)+r'$^{\circ}$', size=80)
+    plt.grid(True)
+    plt.axis([-12,12,-12,12])
+    plt.show()
+    return 0
 
 
 #finds the staring position of the last open field line for a particular value of phi
+#probably should start with a smaller theta, or take a minimum theta guess as a parameter
+#probably won't work for crab
 def findPC(star, phi, decimalPlaces):
-    theta = 2.0
+    theta = 0.1
     line = Fieldline(star, phi, theta)
     for i in range(decimalPlaces+1):
         stepSize = 10**(-i)
@@ -96,6 +136,7 @@ def findPC(star, phi, decimalPlaces):
         theta -= stepSize
         line = Fieldline(star, phi, theta)
     return theta #degrees
+
 
 #plots theta vs phi for the polar cap
 def plotPC():
@@ -114,18 +155,24 @@ def plotPC():
     print(PCAngles)
     plt.plot(PCAngles)
     plt.show()
-
     return PCAngles
 
-'''
-def findPC(star, phi, decimalPlaces, theta_guess):
-    while stepSize > 0.01:
-        line = Fieldline(star, phi, theta_guess)
-        if line.isOpen:
-            theta_guess += stepSize
-'''
 
-def main():
+#outputs the emissions view of a particular observer angle
+def observerView(emissions, obsAng):
+    em = gaussian_filter(np.asarray(emissions), sigma=3)
+    observedEmissions = np.fliplr(em)[obsAng] #flipping because star rotates oposite direction to increasing phi
+    plt.plot(observedEmissions)
+    plt.xlabel("phase (degrees)")
+    plt.ylabel("relative emission")
+    plt.text(5, 1.55, str(obsAng)+r'$^{\circ}$', size=20)
+    plt.axis([0,360,0,1.7])
+    plt.show()
+    return 0
+
+
+#plots emissions from a band with specified inner radius to the edge of the polar cap
+def innerCircleToPolarCap():
     ns = specifyStarParameters()
     #ns.setOtherk()
     startTime = time()
@@ -133,13 +180,12 @@ def main():
     emissions = [[0.0]*360 for i in range(180)]
     for phi in np.arange(0,360,1):
         print("phi: ", phi)
-        theta = 2.0
+        theta = 2.0 #inner radius
         line = Fieldline(ns, phi, theta, False)
         #for theta in np.arange(1,theta_max, 0.1):
         while line.isOpen:
-            if line.alreadyEmitted:
-                (phi_emis, theta_emis) = line.emissionDirection
-                emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1.0
+            (phi_emis, theta_emis) = line.emissionDirections[0]
+            emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1.0
             theta += 0.5
             line = Fieldline(ns, phi, theta, False)
         print("theta PC (degrees): ", theta)
@@ -160,13 +206,13 @@ def main():
 
 
 #draws a star with field lines at theta = 5, 10, 15 degrees
-def main2():
+def visualise3D():
     ns = specifyStarParameters()
     #ns.setOtherk()
     startTime = time()
 
     #draw star, rotational axis, light cylinder, magnetosphere
-    ns.draw(5, 10, 15)
+    ns.draw(3, 5, 10)
     ns.animate()
     
     #output instructions for manipulation
@@ -178,7 +224,7 @@ def main2():
 
 
 #this plots emissions using square angular coordinates to get a more equal distribution
-def main3():
+def plotUsingNewCoords():
     ns = specifyStarParameters()
     #ns.setOtherk()
     startTime = time()
@@ -216,7 +262,7 @@ def main3():
             line = Fieldline(ns, phi, theta, False)
             if line.isOpen:
                 print(phi, theta)
-                (phi_emis, theta_emis) = line.emissionDirection
+                (phi_emis, theta_emis) = line.emissionDirections[0]
                 emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1.0
 
     print("Time elapsed:", time() - startTime)
@@ -235,89 +281,116 @@ def main3():
     return 0
 
 
-#This plots emissions from the last open field lines and lines x degrees towards the magnetic pole from these
-#TOO SLOW
-def main4():
-    ns = specifyStarParameters()
+#One function to rule them all, one function to find them, One function to bring them all and in the darkness bind them.
+def emissionsFromBand(chi, emissionRadii):
+    ns = Star(10, 0.03, chi)
     #ns.setOtherk()
     startTime = time()
 
-    print("ns.theta_0: ", ns.theta_0)
+    emissionBandThickness = 0.2 #degrees
+    stepSize = 0.02
 
-    emissions = [[0.0]*360 for i in range(180)]
-    for phi in np.arange(0,360,1):
-        print("phi: ", phi)
+    #find (roughly) biggest incircle of polar cap and come in slightly more than required for calculations
+    polarCapDistances = []
+    for angle in [0, 45, 90, 135, 180, 200, 225, 270, 315, 360]:
+        polarCapDistances.append(findPC(ns, angle, 2))
+    theta_min = min(polarCapDistances) - emissionBandThickness - 5*stepSize
 
-        theta_max = findPC(ns, phi, 2)
-        print("theta_max: ", theta_max)
+    emissions = [ [[0.0]*360 for i in range(180)] for j in range(len(emissionRadii))]
+    polarCapPoints = []
 
-        for theta in np.arange(theta_max-2,theta_max, 0.1):
-            line = Fieldline(ns, phi, theta, False)
-            (phi_emis, theta_emis) = line.emissionDirection
-            emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1.0
-
-    plotEmissions(emissions)
-
-    print("Time elapsed:", time() - startTime)
-
-    obsAng = int(raw_input("Enter the observers angle (or 0 to quit): "))
-    while obsAng > 0:
-        plt.plot(emissions[obsAng])
-        plt.xlabel("phi (degrees)")
-        plt.ylabel("relative emission")
-        plt.show()
-        obsAng = int(raw_input("Enter the observers angle (or 0 to quit): "))
-
-    return 0
-
-
-#Plots emissions only from within a band of given thickness at the end of the polar cap
-def main5():
-    ns = specifyStarParameters()
-    #ns.setOtherk()
-    startTime = time()
-
-    emissionBandThickness = 1 #degrees
-    theta_min = min(findPC(ns, 0, 2), findPC(ns, 45, 2), findPC(ns, 90, 2)) - emissionBandThickness - 0.1
-
-    stepSize = 0.05
-
-    emissions = [[0.0]*360 for i in range(180)]
     for phi in np.arange(0,360,1):
         print("phi: ", phi)
         theta = theta_min
-        line = Fieldline(ns, phi, theta, False)
+        line = Fieldline(ns, phi, theta, False, emissionRadii)
 
-        listOfEmissionsFromThisPhi = []
+        listOfEmittingFieldlinesFromThisPhi = []
 
         while line.isOpen:
-            if line.alreadyEmitted:
-                #(phi_emis, theta_emis) = line.emissionDirection
-                listOfEmissionsFromThisPhi.append(line.emissionDirection)
+            listOfEmittingFieldlinesFromThisPhi.append(line.emissionDirections)
             theta += stepSize
-            line = Fieldline(ns, phi, theta, False)
+            line = Fieldline(ns, phi, theta, False, emissionRadii)
+
+        print("This should be the same number always: ", len(listOfEmittingFieldlinesFromThisPhi[-int(round(emissionBandThickness/stepSize)):]))
+        for individualFieldline in listOfEmittingFieldlinesFromThisPhi[-int(round(emissionBandThickness/stepSize)):]: #we only want emissions from within 'emissionBandThickness' of last open field lines
+            for i in range(len(individualFieldline)):
+                (phi_emis, theta_emis) = individualFieldline[i]
+                emissions[i][int(round(theta_emis))][int(round(phi_emis)) % 360] += 1.0
 
 
-        for coords in listOfEmissionsFromThisPhi[-int(emissionBandThickness/stepSize):]: #we only want emissions from within 'emissionBandThickness' of last open field lines
-            (phi_emis, theta_emis) = coords
-            emissions[int(round(theta_emis))][int(round(phi_emis)) % 360] += 1.0
+        #print("theta PC (degrees): ", theta)
+        polarCapPoints.append((phi,theta))
 
+    #savePC(polarCapPoints, "fifthBandAngle"+str(chi)+"PolarCapPoints")
 
-        print("theta PC (degrees): ", theta)
+    for i in range(len(emissionRadii)):
+        fname = "distChangeRadius"+str(emissionRadii[i])+"Angle"+str(chi)
+        f = open("savedEmissions/"+fname+".txt", 'w')
+        for line in emissions[i]:
+            f.write(str(line)[1:-1] + "\n")
+        f.close()
+        print("File saved")
 
-    plotEmissions(emissions)
-    saveEmissions(emissions)
 
     print("Time elapsed:", time() - startTime)
 
-    obsAng = int(raw_input("Enter the observers angle (or 0 to quit): "))
-    while obsAng > 0:
-        plt.plot(emissions[obsAng])
-        plt.xlabel("phi (degrees)")
-        plt.ylabel("relative emission")
-        plt.show()
-        obsAng = int(raw_input("Enter the observers angle (or 0 to quit): "))
-
     return 0
 
-main5()
+
+#calculates and saves the emissions from stars with multiple of 10 degree magnetic inclination
+#can take long to run
+def batchCalculate():
+    emissionRadius = int(raw_input("Enter emission distance to light cylinder (% LC): "))
+    startTime = time()
+
+    for chi in range(0, 100, 10):
+        print("chi: ", chi)
+        try:
+            emissionsFromBand(chi, [emissionRadius])
+        except:
+            print("It failed oh no .. KEEP GOING")
+
+    print("TOTAL TIME TAKEN = ", time() - startTime)
+
+
+#Reads from emissions file and returns array of emissions
+def readFromFile(filename):
+    f = open("savedEmissions/"+filename, 'r')
+    emissions = []
+    for line in f:
+        emissions.append([float(item) for item in line[:-1].split(", ")])
+    return emissions
+
+'''
+#sample code for plotting from saved files
+name1 = "fifthBandRadius0.5Angle"
+name2 = "distChangeRadius0.5Angle60.txt"
+for i in range(1, 10):
+    emissions = readFromFile("distChangeRadius"+str(i/10.0)+"Angle45.txt")
+    plotEmissions(emissions, rad=i/10.0)
+'''
+
+'''
+#sample code for calculating emission from range of distances for specid chi
+chi = int(raw_input("Enter chi: "))
+emRads = [item/10.0 for item in [1,2,3,4,5,6,7,8,9]]
+print(emRads)
+emissionsFromBand(chi, emRads)
+'''
+
+if __name__ == "__main__":
+    # your code goes here
+    print("edit main function to your own specifications")
+
+
+
+'''NOTES
+SAVE THESE USING 3D ARRAY - done
+WHEN SAVING EMISSIONS, SPLIT INTO SEVERAL FILES SO THAT PLOTTING STILL WORKS - done
+MAKE FUNCTION THAT RUNS FOR DIFFERENT CHI AND RUN THESE IN PARALLEL - done
+
+PLOT ALL FIELD LINES IN POLAR CAP - avoided? Avoided woo!
+CHECK MORE POINTS FOR MIN POLAR CAP THETA - done
+
+
+'''

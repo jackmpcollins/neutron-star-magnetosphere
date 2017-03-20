@@ -73,7 +73,7 @@ class Star(object):
         self.scene.forward = self.rotAxPerp
         self.scene.up = self.rotationAxis
         while True:
-            rate(1) #was 30
+            rate(30)
             raw_input("next!")
             currentCamera = vector(self.scene.forward)
-            self.scene.forward = currentCamera.rotate(-pi/20, self.rotationAxis) #was 90
+            self.scene.forward = currentCamera.rotate(-pi/90, self.rotationAxis) #was 90
